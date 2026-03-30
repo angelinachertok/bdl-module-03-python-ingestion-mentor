@@ -9,8 +9,7 @@ from datetime import datetime
 def check_python_lessons():
     """Check Python lesson files."""
     import os
-    # Look for lesson files in the mentor repository (current directory)
-    homework_dir = Path(os.path.join(os.getcwd(), 'homework'))
+    homework_dir = Path(os.getcwd())
     test_results = []
     
     # Find student solutions
@@ -92,38 +91,21 @@ def main():
     python_results = check_python_lessons()
     test_results.extend(python_results)
     
-    # Save results as JUnit XML
-    total_tests = len(test_results)
-    passed_tests = len([r for r in test_results if r["status"] == "passed"])
-    failed_tests = len([r for r in test_results if r["status"] == "failed"])
-    error_tests = len([r for r in test_results if r["status"] == "error"])
-    skipped_tests = len([r for r in test_results if r["status"] == "skipped"])
-    
-    xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="Python Ingestion Tests" tests="{total_tests}" failures="{failed_tests}" errors="{error_tests}" skipped="{skipped_tests}">
-    <testsuite name="Python Lessons" tests="{total_tests}" failures="{failed_tests}" errors="{error_tests}" skipped="{skipped_tests}">
-'''
-    
-    for result in test_results:
-        status = "passed" if result["status"] == "passed" else "failed" if result["status"] == "failed" else "error" if result["status"] == "error" else "skipped"
-        xml_content += f'''        <testcase name="{result['name']}" classname="PythonTests" status="{status}">
-'''
-        if status in ["failed", "error"]:
-            xml_content += f'''            <failure message="{result['message']}">{result.get('details', '')}</failure>
-'''
-        elif status == "skipped":
-            xml_content += f'''            <skipped message="{result['message']}"/>
-'''
-        xml_content += '''        </testcase>
-'''
-    
-    xml_content += '''    </testsuite>
-</testsuites>'''
+    # Save results to JSON
+    results_data = {
+        "timestamp": datetime.now().isoformat(),
+        "total_tests": len(test_results),
+        "passed": len([r for r in test_results if r["status"] == "passed"]),
+        "failed": len([r for r in test_results if r["status"] == "failed"]),
+        "skipped": len([r for r in test_results if r["status"] == "skipped"]),
+        "errors": len([r for r in test_results if r["status"] == "error"]),
+        "results": test_results
+    }
     
     with open(test_results_dir / 'results.xml', 'w', encoding='utf-8') as f:
-        f.write(xml_content)
+        json.dump(results_data, f, indent=2, ensure_ascii=False)
     
-    print(f"Test completed: {passed_tests}/{total_tests} passed")
+    print(f"Test completed: {results_data['passed']}/{results_data['total_tests']} passed")
     return results_data
 
 if __name__ == "__main__":
